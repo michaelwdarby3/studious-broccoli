@@ -19,6 +19,21 @@ def load_model(checkpoint_path):
     return model
 
 
+def encode_sequence(sequence):
+    """
+    Encodes a sequence into a numerical format.
+
+    Args:
+        sequence (str): The input sequence as a string.
+
+    Returns:
+        np.array: Encoded sequence.
+
+    Note: This is a placeholder. You need to replace it with your actual sequence encoding logic.
+    """
+    # Placeholder implementation - replace with your actual encoding logic
+    return np.array([ord(char) for char in sequence], dtype=np.int64)
+
 def prepare_input(sequence, max_len):
     """
     Prepares a single sequence input for prediction.

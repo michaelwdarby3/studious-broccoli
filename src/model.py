@@ -91,3 +91,4 @@ class ProtCNN(pl.LightningModule):
                 'monitor': 'train_loss',  # Optionally, specify a metric for `ReduceLROnPlateau`
             }
         }
+

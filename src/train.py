@@ -12,9 +12,9 @@ def setup_data_loaders(data_dir, batch_size, num_workers=0):
     Existing documentation...
     """
     # Assuming the reader function is used inside the SequenceDataset to load data
-    train_dataset = SequenceDataset(os.path.join(data_dir, 'train'))
-    val_dataset = SequenceDataset(os.path.join(data_dir, 'val'))
-    test_dataset = SequenceDataset(os.path.join(data_dir, 'test'))
+    train_dataset = SequenceDataset(data_dir, 'train', max_len=128)  # max_len should match your model's input size
+    val_dataset = SequenceDataset(data_dir, 'val', max_len=128)
+    test_dataset = SequenceDataset(data_dir, 'test', max_len=128)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
@@ -26,40 +26,38 @@ def setup_data_loaders(data_dir, batch_size, num_workers=0):
         'test': test_loader
     }
 
+    #return train_loader, val_loader, test_loader
 
-def train_model(data_dir="../data/random_split", batch_size=32, max_epochs=25, gpus=1, num_classes=None):
+def train_model(data_dir="../data/random_split", epochs=10, batch_size=32, learning_rate=0.001, gpus=1, num_classes=None, dropout_rate=0.5):
     """
-    Encapsulates the model training process.
+    Train the model with the given parameters.
 
     Args:
-        data_dir (str): Path to the directory containing the data.
-        batch_size (int): Number of samples in each batch.
-        max_epochs (int): Maximum number of epochs to train for.
-        gpus (int): Number of GPUs to train on. 0 for CPU mode.
-        num_classes (int): Number of classes in the dataset. Must be specified.
+        data_dir (str): Path to the dataset.
+        epochs (int): Number of training epochs.
+        batch_size (int): Batch size for training.
+        learning_rate (float): Learning rate for the optimizer.
+        dropout_rate (float): Dropout rate for the model.
     """
+    # Initialize dataset and DataLoader
     if num_classes is None:
         raise ValueError("num_classes must be specified for ProtCNN.")
 
-    dataloaders = setup_data_loaders(data_dir, batch_size)
+    data_loader = setup_data_loaders(data_dir, batch_size)
 
-    model = ProtCNN(num_classes=num_classes)
+    # Initialize the model with hyperparameters
+    model = ProtCNN(learning_rate=learning_rate, dropout_rate=dropout_rate, num_classes=num_classes)
 
+    # Set up PyTorch Lightning's trainer
     checkpoint_callback = ModelCheckpoint(
         monitor='val_loss',
         dirpath=os.path.join(data_dir, 'checkpoints'),
         filename='protcnn-{epoch:02d}-{val_loss:.2f}',
         save_top_k=3,
-        mode='min',
+        mode='min'
     )
-
-    trainer = pl.Trainer(
-        gpus=gpus,
-        max_epochs=max_epochs,
-        callbacks=[checkpoint_callback]
-    )
-
-    trainer.fit(model, dataloaders['train'], dataloaders['val'])
+    trainer = pl.Trainer(max_epochs=epochs, gpus=gpus, callbacks=[checkpoint_callback])
+    trainer.fit(model, data_loader)
     trainer.test(model, dataloaders['test'])
 
 
@@ -68,7 +66,12 @@ if __name__ == "__main__":
     DATA_DIR = "../data/random_split"
     BATCH_SIZE = 32
     MAX_EPOCHS = 25
+    LEARNING_RATE=0.001
+    DROPOUT_RATE=0.5
     GPUS = 1  # Set to 0 if you want to train on CPU
     NUM_CLASSES = 10  # Adjust based on your dataset
 
-    train_model(DATA_DIR, BATCH_SIZE, MAX_EPOCHS, GPUS, NUM_CLASSES)
+    train_model(DATA_DIR, MAX_EPOCHS, BATCH_SIZE, LEARNING_RATE, GPUS, NUM_CLASSES, DROPOUT_RATE)
+
+
+
