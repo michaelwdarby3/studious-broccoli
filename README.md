@@ -36,38 +36,46 @@ Protein Classifier is a machine learning project designed to classify protein se
    ```
    make build
    ```
-   
 
-##Usage
-###Training the Model
+## Usage
+
+## Training the Model
+
 To train the model, run the following command:
 
 ```sh
 python src/train.py --data-dir ./data --epochs 25 --batch-size 32 --learning-rate 0.001 --gpus 1 --num-classes 10 --dropout-rate 0.5
 ```
 
-###Making Predictions
+## Making Predictions
+
 To make a prediction, run the following command:
 
 ```sh
 python src/predict.py --checkpoint-path path/to/your/model_checkpoint.ckpt --sequence "YOUR_SEQUENCE_HERE" --max-len 128
 ```
 
-###Using the CLI
+## Using the CLI
+
 The project also includes a CLI for easier interaction:
 
 ```sh
 python src/cli.py train --data-dir ./data --epochs 25 --batch-size 32 --learning-rate 0.001 --gpus 1 --num-classes 10 --dropout-rate 0.5
 python src/cli.py make_prediction --checkpoint-path path/to/your/model_checkpoint.ckpt --sequence "YOUR_SEQUENCE_HERE" --max-len 128
 ```
-###Features
+
+## Features 
+
 - Data processing and preparation for protein sequences.
 - Training a convolutional neural network (CNN) for sequence classification.
 - Making predictions with the trained model.
 - Command-line interface for training and prediction.
-- 
-##Contributing
+
+
+## Contributing
+
 Contributions are welcome! Please read the contributing guidelines for more information.
 
-##License
+## License
+
 This project is licensed under the MIT License. See the LICENSE file for details.
