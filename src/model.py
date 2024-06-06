@@ -74,7 +74,7 @@ class ProtCNN(pl.LightningModule):
         self.classifier = nn.Linear(in_channels, num_classes)
 
         # Metrics
-        self.accuracy = torchmetrics.Accuracy()
+        self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes)
 
         # Save hyperparameters
         self.save_hyperparameters()
