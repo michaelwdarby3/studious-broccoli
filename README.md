@@ -1,5 +1,6 @@
 # studious-broccoli
 
+![CI](https://github.com/michaelwdarby3/studious-broccoli/actions/workflows/ci.yml/badge.svg)
 
 # Protein Classifier
 
