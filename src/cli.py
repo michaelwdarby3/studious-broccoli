@@ -1,37 +1,52 @@
 import click
 from train import train_model  # Adjust this import according to your project structure
-from predict import predict  # Adjust this import according to your project structure
+from predict import predict, load_model  # Adjust this import according to your project structure
 
 @click.group()
 def cli():
     """
-    This function is the entry point for the CLI. It groups all commands together,
-    making them accessible through the command line. This is where you can initialize
-    anything that's common across commands, but often it's just used to define the command group.
+    Entry point for the CLI. Groups all commands together, making them accessible through the command line.
     """
     pass
 
-@cli.command()
-@click.option('--data-dir', default='./data', help='Directory containing the data.')
+@cli.command(name="train")
+@click.option('--data-dir', default='./data', type=str, help='Directory containing the data.')
 @click.option('--epochs', default=10, type=int, help='Number of epochs for training.')
-@click.option('--batch-size', default=32, help='Batch size for training.')
-@click.option('--learning-rate', default=0.001, help='Learning rate for optimizer.')
-@click.option('--gpus', default=1, type=int, help='Number of GPUs.')
-@click.option('--num-classes', default=0.001, help='Learning rate for optimizer.')
-@click.option('--dropout-rate', default=0.5, help='Dropout rate for the model.')
-def train(data_dir, epochs, batch_size, learning_rate, dropout_rate):
+@click.option('--batch-size', default=32, type=int, help='Batch size for training.')
+@click.option('--learning-rate', default=0.001, type=float, help='Learning rate for optimizer.')
+@click.option('--accelerator', default='cpu', type=str, help='Accelerator to use: cpu, gpu, tpu, etc.')
+@click.option('--devices', default=1, type=int, help='Number of devices.')
+@click.option('--num-classes', default=10, type=int, help='Number of output classes.')
+def train_command(data_dir, epochs, batch_size, learning_rate, accelerator, devices, num_classes):
     """
-    Trains the model with the specified number of epochs and data path.
-    """
-    train_model(epochs=epochs, data_dir=data_dir, batch_size=batch_size, learning_rate=learning_rate, dropout_rate=dropout_rate)
+    Train the model with the specified number of epochs and data path.
 
-@cli.command()
-@click.option('--input-data', required=True, type=str, help='Input data for making a prediction.')
-def predict(input_data):
+    Args:
+        data_dir (str): Directory containing the data.
+        epochs (int): Number of epochs for training.
+        batch_size (int): Batch size for training.
+        learning_rate (float): Learning rate for optimizer.
+        gpus (int): Number of GPUs.
+        num_classes (int): Number of output classes.
+        dropout_rate (float): Dropout rate for the model.
     """
-    Makes a prediction based on the provided input data.
+    train_model(data_dir, epochs, batch_size, learning_rate, accelerator, devices, num_classes)
+
+@cli.command(name="predict")
+@click.option('--checkpoint-path', required=True, type=str, help='Path to the model checkpoint.')
+@click.option('--sequence', required=True, type=str, help='Input sequence for making a prediction.')
+@click.option('--max-len', default=128, type=int, help='Maximum length of the sequence.')
+def predict_command(checkpoint_path: str, sequence: str, max_len: int):
     """
-    prediction = predict(input_data=input_data)
+    Make a prediction based on the provided input sequence.
+
+    Args:
+        checkpoint_path (str): Path to the model checkpoint.
+        sequence (str): Input sequence for making a prediction.
+        max_len (int): Maximum length of the sequence.
+    """
+    model = load_model(checkpoint_path)
+    prediction = predict(model, sequence, max_len)
     click.echo(f'Prediction: {prediction}')
 
 if __name__ == '__main__':

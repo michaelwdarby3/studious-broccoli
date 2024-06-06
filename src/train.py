@@ -3,18 +3,25 @@ import torch
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
-from data import SequenceDataset, reader  # Assuming these are correctly implemented
-from model import ProtCNN  # Make sure this matches your model's actual class name
+from data import SequenceDataset
+from model import ProtCNN
+from typing import Dict
 
+def setup_data_loaders(data_path: str, batch_size: int, num_workers: int = 0) -> Dict[str, DataLoader]:
+    """
+    Set up data loaders for training, validation, and test datasets.
 
-def setup_data_loaders(data_dir, batch_size, num_workers=0):
+    Args:
+        data_dir (str): Directory containing the data.
+        batch_size (int): Batch size for the data loaders.
+        num_workers (int): Number of workers for data loading.
+
+    Returns:
+        Dict[str, DataLoader]: Dictionary containing data loaders for 'train', 'val', and 'test' sets.
     """
-    Existing documentation...
-    """
-    # Assuming the reader function is used inside the SequenceDataset to load data
-    train_dataset = SequenceDataset(data_dir, 'train', max_len=128)  # max_len should match your model's input size
-    val_dataset = SequenceDataset(data_dir, 'val', max_len=128)
-    test_dataset = SequenceDataset(data_dir, 'test', max_len=128)
+    train_dataset = SequenceDataset(data_path, 'train', max_len=128)
+    val_dataset = SequenceDataset(data_path, 'val', max_len=128)
+    test_dataset = SequenceDataset(data_path, 'test', max_len=128)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
@@ -26,9 +33,7 @@ def setup_data_loaders(data_dir, batch_size, num_workers=0):
         'test': test_loader
     }
 
-    #return train_loader, val_loader, test_loader
-
-def train_model(data_dir="../data/random_split", epochs=10, batch_size=32, learning_rate=0.001, gpus=1, num_classes=None, dropout_rate=0.5):
+def train_model(data_path: str, epochs: int, batch_size: int, learning_rate: float, accelerator, devices, num_classes: int):
     """
     Train the model with the given parameters.
 
@@ -37,41 +42,39 @@ def train_model(data_dir="../data/random_split", epochs=10, batch_size=32, learn
         epochs (int): Number of training epochs.
         batch_size (int): Batch size for training.
         learning_rate (float): Learning rate for the optimizer.
+        gpus (int): Number of GPUs to use for training.
+        num_classes (int): Number of output classes.
         dropout_rate (float): Dropout rate for the model.
+
+    Raises:
+        ValueError: If num_classes is not specified.
     """
-    # Initialize dataset and DataLoader
     if num_classes is None:
         raise ValueError("num_classes must be specified for ProtCNN.")
 
-    data_loader = setup_data_loaders(data_dir, batch_size)
+    data_loaders = setup_data_loaders(data_path, batch_size)
 
-    # Initialize the model with hyperparameters
-    model = ProtCNN(learning_rate=learning_rate, dropout_rate=dropout_rate, num_classes=num_classes)
+    model = ProtCNN(num_classes=num_classes)
 
-    # Set up PyTorch Lightning's trainer
     checkpoint_callback = ModelCheckpoint(
         monitor='val_loss',
-        dirpath=os.path.join(data_dir, 'checkpoints'),
+        dirpath=os.path.join(data_path, 'checkpoints'),
         filename='protcnn-{epoch:02d}-{val_loss:.2f}',
         save_top_k=3,
         mode='min'
     )
-    trainer = pl.Trainer(max_epochs=epochs, gpus=gpus, callbacks=[checkpoint_callback])
-    trainer.fit(model, data_loader)
-    trainer.test(model, dataloaders['test'])
 
+    trainer = pl.Trainer(max_epochs=epochs, accelerator=accelerator, devices=devices, callbacks=[checkpoint_callback])
+    trainer.fit(model, train_dataloaders=data_loaders['train'], val_dataloaders=data_loaders['val'])
+    trainer.test(model, dataloaders=data_loaders['test'])
 
 if __name__ == "__main__":
-    # Example default values, adjust as needed
     DATA_DIR = "../data/random_split"
     BATCH_SIZE = 32
     MAX_EPOCHS = 25
-    LEARNING_RATE=0.001
-    DROPOUT_RATE=0.5
+    LEARNING_RATE = 0.001
+    DROPOUT_RATE = 0.5
     GPUS = 1  # Set to 0 if you want to train on CPU
     NUM_CLASSES = 10  # Adjust based on your dataset
 
-    train_model(DATA_DIR, MAX_EPOCHS, BATCH_SIZE, LEARNING_RATE, GPUS, NUM_CLASSES, DROPOUT_RATE)
-
-
-
+    train_model(DATA_DIR, MAX_EPOCHS, BATCH_SIZE, LEARNING_RATE, GPUS, NUM_CLASSES)

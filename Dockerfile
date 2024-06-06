@@ -10,11 +10,11 @@ COPY . .
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 80 available to the world outside this container
+# Expose port 80 (if needed for a web application; otherwise, this can be removed)
 EXPOSE 80
 
-# Define environment variable
+# Define environment variable (remove if not needed)
 ENV NAME World
 
-# Run app.py when the container launches
+# Run the application
 CMD ["python", "src/predict.py"]
